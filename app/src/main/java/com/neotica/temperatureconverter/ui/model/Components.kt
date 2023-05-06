@@ -18,7 +18,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.neotica.temperatureconverter.R
+import com.neotica.temperatureconverter.Scale
 import com.neotica.temperatureconverter.ui.theme.TemperatureConverterTheme
+import com.neotica.temperatureconverter.ui.utils.convertToCelsius
 import com.neotica.temperatureconverter.ui.utils.convertToFahrenheit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +82,60 @@ fun ConverterApp(
             input = it
             output = convertToFahrenheit(it)
         })
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GeneralTemperatureInput(
+    scale: Scale,
+    input: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier) {
+        OutlinedTextField(
+            value = input,
+            onValueChange = onValueChange,
+            label = {
+                Text(
+                    text = stringResource(
+                        id = R.string.enter_temperature,
+                        scale.scaleName
+                    )
+                )
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+    }
+}
+
+@Composable
+fun TwoWayConverterApp(
+    modifier: Modifier = Modifier
+) {
+    var celsius by remember { mutableStateOf("") }
+    var fahrenheit by remember { mutableStateOf("") }
+    Column(modifier.padding(16.dp)) {
+        Text(
+            text = stringResource(id = R.string.two_way_converter),
+            style = MaterialTheme.typography.headlineMedium
+        )
+        GeneralTemperatureInput(scale = Scale.CELSIUS,
+            input = celsius,
+            onValueChange = {
+                celsius = it
+                fahrenheit = convertToFahrenheit(it)
+            }
+        )
+        GeneralTemperatureInput(
+            scale = Scale.FAHRENHEIT,
+            input = fahrenheit,
+            onValueChange = {
+                fahrenheit = it
+                celsius = convertToCelsius(it)
+            }
+        )
     }
 }
 
