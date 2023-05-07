@@ -1,7 +1,9 @@
 package com.neotica.temperatureconverter.ui.model
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,8 +13,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,6 +52,7 @@ import com.neotica.temperatureconverter.Scale
 import com.neotica.temperatureconverter.ui.theme.TemperatureConverterTheme
 import com.neotica.temperatureconverter.ui.utils.convertToCelsius
 import com.neotica.temperatureconverter.ui.utils.convertToFahrenheit
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -166,13 +173,19 @@ fun TwoWayConverterApp(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavDrawerApp() {
+fun NavDrawerApp(
+    modifier: Modifier = Modifier,
+) {
     val drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scaffoldState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackBarState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     //icons
-    val items = listOf(Icons.Default.Menu, Icons.Default.Favorite)
+    val items = listOf(
+        Pair(Icons.Default.Home, "Home"),
+        Pair(Icons.Default.Favorite, "Favorite"),
+        Pair(Icons.Default.AccountCircle, "Profile"),
+    )
     var selectedItem by remember { mutableStateOf(items[0]) }
     Scaffold(
         topBar = {
@@ -181,7 +194,7 @@ fun NavDrawerApp() {
                     scope.launch {
                         if (drawerState.isClosed) {
                             drawerState.open()
-                        } else if (drawerState.isOpen){
+                        } else if (drawerState.isOpen) {
                             drawerState.close()
                         }
                     }
@@ -193,31 +206,23 @@ fun NavDrawerApp() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             ModalNavigationDrawer(
                 drawerState = drawerState,
+                gesturesEnabled = drawerState.isOpen,
                 drawerContent = {
                     ModalDrawerSheet() {
                         Spacer(modifier = Modifier.height(8.dp))
-                        items.forEach {
-                            NavigationDrawerItem(
-                                label = { Text(text = it.name) },
-                                selected = it == selectedItem,
-                                onClick = {
-                                    scope.launch { drawerState.close() }
-                                    selectedItem = it
-                                },
-                                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                            )
-                        }
+                        NavigationDrawerContent(scope = scope, drawerState = drawerState)
                     }
                 }
             ) {
                 Column(
                     Modifier
                         .verticalScroll(rememberScrollState())
-                        .fillMaxWidth()) {
+                        .fillMaxWidth()
+                ) {
                     TwoWayConverterApp()
                     Text(text = stringResource(id = R.string.hello_world))
                 }
@@ -242,6 +247,47 @@ fun DefTopBar(onMenuClick: () -> Unit) {
         },
         title = { Text(text = stringResource(id = R.string.app_name)) }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NavigationDrawerContent(
+    modifier: Modifier = Modifier,
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
+    scope: CoroutineScope = rememberCoroutineScope(),
+) {
+    val items = listOf(
+        Pair(Icons.Default.Home, "Home"),
+        Pair(Icons.Default.Favorite, "Favorite"),
+        Pair(Icons.Default.AccountCircle, "Profile"),
+    )
+    var selectedItem by remember { mutableStateOf(items[0]) }
+    Column(modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .height(190.dp)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primary)
+        )
+        for (item in items) {
+            /**/
+            NavigationDrawerItem(
+                label = {
+                    Row{
+                        Icon(imageVector = item.first, contentDescription = null, modifier.padding(horizontal = 12.dp))
+                        Text(text = item.second)
+                    }
+                },
+                selected = item == selectedItem,
+                onClick = {
+                    scope.launch { drawerState.close() }
+                    selectedItem = item
+                },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+        }
+        Divider()
+    }
 }
 
 @Preview(showBackground = true)
