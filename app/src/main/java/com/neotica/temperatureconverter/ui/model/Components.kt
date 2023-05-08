@@ -30,6 +30,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -177,16 +179,9 @@ fun NavDrawerApp(
     modifier: Modifier = Modifier,
 ) {
     val drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val snackBarState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    //icons
-    val items = listOf(
-        Pair(Icons.Default.Home, "Home"),
-        Pair(Icons.Default.Favorite, "Favorite"),
-        Pair(Icons.Default.AccountCircle, "Profile"),
-    )
-    var selectedItem by remember { mutableStateOf(items[0]) }
+    val snackBarState = remember { SnackbarHostState() }
     Scaffold(
         topBar = {
             DefTopBar(
@@ -201,6 +196,7 @@ fun NavDrawerApp(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackBarState) }
     ) {
         Box(
             modifier = Modifier
@@ -214,7 +210,11 @@ fun NavDrawerApp(
                 drawerContent = {
                     ModalDrawerSheet() {
                         Spacer(modifier = Modifier.height(8.dp))
-                        NavigationDrawerContent(scope = scope, drawerState = drawerState)
+                        NavigationDrawerContent(
+                            scope = scope,
+                            drawerState = drawerState,
+                            snackBarHostState = snackBarState
+                        )
                     }
                 }
             ) {
@@ -249,17 +249,20 @@ fun DefTopBar(onMenuClick: () -> Unit) {
     )
 }
 
+data class MenuItem(val icon: ImageVector, val title: String)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationDrawerContent(
     modifier: Modifier = Modifier,
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     scope: CoroutineScope = rememberCoroutineScope(),
+    snackBarHostState: SnackbarHostState
 ) {
     val items = listOf(
-        Pair(Icons.Default.Home, "Home"),
-        Pair(Icons.Default.Favorite, "Favorite"),
-        Pair(Icons.Default.AccountCircle, "Profile"),
+        MenuItem(Icons.Default.Home, "Home"),
+        MenuItem(Icons.Default.Favorite, "Favorite"),
+        MenuItem(Icons.Default.AccountCircle, "Profile"),
     )
     var selectedItem by remember { mutableStateOf(items[0]) }
     Column(modifier.fillMaxSize()) {
@@ -270,17 +273,27 @@ fun NavigationDrawerContent(
                 .background(MaterialTheme.colorScheme.primary)
         )
         for (item in items) {
-            /**/
             NavigationDrawerItem(
                 label = {
-                    Row{
-                        Icon(imageVector = item.first, contentDescription = null, modifier.padding(horizontal = 12.dp))
-                        Text(text = item.second)
+                    Row {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = null,
+                            modifier.padding(horizontal = 12.dp)
+                        )
+                        Text(text = item.title)
                     }
                 },
                 selected = item == selectedItem,
                 onClick = {
-                    scope.launch { drawerState.close() }
+                    scope.launch {
+                        drawerState.close()
+                        snackBarHostState.showSnackbar(
+                            message = item.title,
+                            actionLabel = null,
+                            withDismissAction = true
+                        )
+                    }
                     selectedItem = item
                 },
                 modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
