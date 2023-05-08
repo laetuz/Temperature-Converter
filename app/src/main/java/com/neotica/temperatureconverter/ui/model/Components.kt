@@ -1,5 +1,9 @@
 package com.neotica.temperatureconverter.ui.model
 
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -43,8 +50,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.LinearGradient
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -180,7 +195,6 @@ fun NavDrawerApp(
 ) {
     val drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val snackBarState = remember { SnackbarHostState() }
     Scaffold(
         topBar = {
@@ -208,7 +222,7 @@ fun NavDrawerApp(
                 drawerState = drawerState,
                 gesturesEnabled = drawerState.isOpen,
                 drawerContent = {
-                    ModalDrawerSheet() {
+                    ModalDrawerSheet {
                         Spacer(modifier = Modifier.height(8.dp))
                         NavigationDrawerContent(
                             scope = scope,
@@ -259,6 +273,7 @@ fun NavigationDrawerContent(
     scope: CoroutineScope = rememberCoroutineScope(),
     snackBarHostState: SnackbarHostState
 ) {
+    val context = LocalContext.current
     val items = listOf(
         MenuItem(Icons.Default.Home, "Home"),
         MenuItem(Icons.Default.Favorite, "Favorite"),
@@ -270,8 +285,22 @@ fun NavigationDrawerContent(
             modifier = Modifier
                 .height(190.dp)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-        )
+                .background(MaterialTheme.colorScheme.primary),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.moon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                )
+            }
+
+        }
+        Spacer(modifier = Modifier.height(10.dp))
         for (item in items) {
             NavigationDrawerItem(
                 label = {
@@ -299,7 +328,17 @@ fun NavigationDrawerContent(
                 modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
             )
         }
+        Spacer(modifier = Modifier.height(10.dp))
         Divider()
+    }
+    BackHandler {
+        scope.launch {
+            if (drawerState.isClosed) {
+                (context as? ComponentActivity)?.finishAffinity() //close the app
+            } else if (drawerState.isOpen) {
+                drawerState.close()
+            }
+        }
     }
 }
 
