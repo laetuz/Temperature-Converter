@@ -1,7 +1,6 @@
 package com.neotica.temperatureconverter.ui.model
 
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,9 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -51,14 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.LinearGradient
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -190,24 +180,13 @@ fun TwoWayConverterApp(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavDrawerApp(
-    modifier: Modifier = Modifier,
-) {
-    val drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+fun NavDrawerApp() {
     val snackBarState = remember { SnackbarHostState() }
+    val appState = rememberNavDrawerState()
     Scaffold(
         topBar = {
             DefTopBar(
-                onMenuClick = {
-                    scope.launch {
-                        if (drawerState.isClosed) {
-                            drawerState.open()
-                        } else if (drawerState.isOpen) {
-                            drawerState.close()
-                        }
-                    }
-                }
+                onMenuClick = appState::onMenuClick
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackBarState) }
@@ -219,14 +198,14 @@ fun NavDrawerApp(
             contentAlignment = Alignment.Center,
         ) {
             ModalNavigationDrawer(
-                drawerState = drawerState,
-                gesturesEnabled = drawerState.isOpen,
+                drawerState = appState.drawerState,
+                gesturesEnabled = appState.drawerState.isOpen,
                 drawerContent = {
                     ModalDrawerSheet {
                         Spacer(modifier = Modifier.height(8.dp))
                         NavigationDrawerContent(
-                            scope = scope,
-                            drawerState = drawerState,
+                            scope = appState.scope,
+                            drawerState = appState.drawerState,
                             snackBarHostState = snackBarState
                         )
                     }
@@ -273,7 +252,7 @@ fun NavigationDrawerContent(
     scope: CoroutineScope = rememberCoroutineScope(),
     snackBarHostState: SnackbarHostState
 ) {
-    val context = LocalContext.current
+    val appState = rememberNavDrawerState()
     val items = listOf(
         MenuItem(Icons.Default.Home, "Home"),
         MenuItem(Icons.Default.Favorite, "Favorite"),
@@ -334,7 +313,7 @@ fun NavigationDrawerContent(
     BackHandler {
         scope.launch {
             if (drawerState.isClosed) {
-                (context as? ComponentActivity)?.finishAffinity() //close the app
+                (appState.context as? ComponentActivity)?.finishAffinity() //close the app
             } else if (drawerState.isOpen) {
                 drawerState.close()
             }
